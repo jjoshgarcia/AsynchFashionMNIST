@@ -15,6 +15,13 @@ Kafka Cluster
 >>> docker-compose -f docker-compose-expose.yml up
 ```
 
+Pub/Sub Setup
+
+- Go to Google Cloud Platform -> Service Accounts. Create a service account with Pub/Sub Publisher and subscriber role.
+- Download keys in json format
+- Place file in root
+- Create two topics called 'inference' and 'result_inference'
+
 Train the network
 
 - Install requirements
@@ -50,7 +57,7 @@ train(params,train_set,epochs, save_last_model=True)
 
 Asynchronous Inference
 
-- Run producer to start sending testing images to kafka every 3 seconds
+- Run producer to start sending testing images to kafka and pub/sub every 3 seconds
 ```
 >>> python producer.py
 ```
@@ -58,7 +65,7 @@ Asynchronous Inference
 ```
 >>> python consumer.py
 ```
-- Run the inference service to listen to kafka and make predictions
+- Run the inference service to listen to kafka and pub/sub and make predictions
 ```
 >>> python inference.py
 ```

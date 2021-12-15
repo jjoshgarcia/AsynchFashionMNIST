@@ -1,16 +1,29 @@
-from kafka import KafkaConsumer
-from json import loads
+from multiprocessing import Process
+from kafka_helper import consume_kafka
+import json
+from pub_sub_helper import consume_pub_sub, PUB_SUB_PROJECT, PUB_SUB_SUBSCRIPTION_RESULT
 
-consumer = KafkaConsumer(
-    'topic_output',
-    bootstrap_servers=['localhost:9092'],
-    auto_offset_reset='earliest',
-    enable_auto_commit=True,
-    group_id='my-group-id',
-    value_deserializer=lambda x: loads(x.decode('utf-8'))
-)
+
+def kafka_callback(message):
+    print('Result from kafka:', message.value)
+
+
+def pub_sub_callback(message):
+    print('Result from pub/sub:', json.loads(message.data))
+
+
+def kaf_consume():
+    consume_kafka('topic_output', kafka_callback)
+
+
+def pub_consume():
+    consume_pub_sub(PUB_SUB_PROJECT, PUB_SUB_SUBSCRIPTION_RESULT, pub_sub_callback)
+
+
 if __name__ == '__main__':
     print('Consumer started')
-    for event in consumer:
-        event_data = event.value
-        print(event_data)
+
+    p1 = Process(target=kaf_consume)
+    p1.start()
+    p2 = Process(target=pub_consume)
+    p2.start()
