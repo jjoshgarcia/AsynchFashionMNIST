@@ -1,7 +1,7 @@
-#Asynchronous Fashion MNIST
+# Asynchronous Fashion MNIST
 
 ## Message Broker's setup
-###Kafka Cluster
+### Kafka Cluster
 
 - Make sure docker compose is installed https://docs.docker.com/compose/install/ and running
 - Clone repository
@@ -14,14 +14,14 @@
 >>> docker-compose -f docker-compose-expose.yml up
 ```
 
-###Pub/Sub Setup
+### Pub/Sub Setup
 
 - Go to Google Cloud Platform -> Service Accounts. Create a service account with Pub/Sub Publisher and subscriber role.
 - Download keys in json format
 - Place file in root
 - Create two topics called 'inference' and 'result_inference'
 
-##Train the network
+## Train the network
 
 - Install requirements
 ```
