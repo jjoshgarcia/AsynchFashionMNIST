@@ -1,8 +1,7 @@
-Asynchronous Fashion MNIST
+#Asynchronous Fashion MNIST
 
-Instructions:
-
-Kafka Cluster
+## Message Broker's setup
+###Kafka Cluster
 
 - Make sure docker compose is installed https://docs.docker.com/compose/install/ and running
 - Clone repository
@@ -15,14 +14,14 @@ Kafka Cluster
 >>> docker-compose -f docker-compose-expose.yml up
 ```
 
-Pub/Sub Setup
+###Pub/Sub Setup
 
 - Go to Google Cloud Platform -> Service Accounts. Create a service account with Pub/Sub Publisher and subscriber role.
 - Download keys in json format
 - Place file in root
 - Create two topics called 'inference' and 'result_inference'
 
-Train the network
+##Train the network
 
 - Install requirements
 ```
@@ -52,10 +51,44 @@ params = OrderedDict(
 epochs = 150
 
 train(params,train_set,epochs, save_last_model=True)
-
 ```
 
-Asynchronous Inference
+## Add a broker to the broker service
+Create a subclass of Broker from broker.py with BrokerProtocol and register to the BrokerService by decorating the 
+class with @register_broker
+```
+from broker import Broker, BrokerProtocol, register_broker
+
+@register_broker
+class ExampleBroker(Broker, BrokerProtocol):
+    name = 'my_broker_name'
+
+    def send(self, data: Dict) -> None:
+        """ My implementation """
+
+    def receive_target(self) -> None:
+        """ My implementation """
+```
+## Use Broker Service 
+
+Import BrokerService from broker.py and instantiate a service with topic and optional callable for receiving data. 
+Set the service key to the desired service name (default='kafka', available services in this project: 'kafka', 'pub_sub').
+```
+from broker import BrokerService
+
+def my_callback():
+    pass
+    
+data={'my_data':'mydata'}
+    
+service=BrokerService('my topic',callback=my_callback,service='pub/sub')
+
+service.send(data)
+service.receive()
+```
+
+
+## Test Asynchronous Inference
 
 - Run producer to start sending testing images to kafka and pub/sub every 3 seconds
 ```

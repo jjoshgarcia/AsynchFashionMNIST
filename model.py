@@ -18,69 +18,71 @@ from PIL import Image
 
 # Build the neural network, expand on top of nn.Module
 class Network(nn.Module):
-  def __init__(self):
-    super().__init__()
+    def __init__(self):
+        super().__init__()
 
-    # define layers
-    self.conv1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5,5))
-    self.conv2 = nn.Conv2d(in_channels=6, out_channels=12, kernel_size=(5,5))
+        # define layers
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=(5, 5))
+        self.conv2 = nn.Conv2d(in_channels=6, out_channels=12, kernel_size=(5, 5))
 
-    self.fc1 = nn.Linear(in_features=12*4*4, out_features=120)
-    self.fc2 = nn.Linear(in_features=120, out_features=60)
-    self.out = nn.Linear(in_features=60, out_features=10)
+        self.fc1 = nn.Linear(in_features=12 * 4 * 4, out_features=120)
+        self.fc2 = nn.Linear(in_features=120, out_features=60)
+        self.out = nn.Linear(in_features=60, out_features=10)
 
-  # define forward function
-  def forward(self, t):
-    # conv 1
-    t = self.conv1(t)
-    t = F.relu(t)
-    t = F.max_pool2d(t, kernel_size=2, stride=2)
+    # define forward function
+    def forward(self, t):
+        # conv 1
+        t = self.conv1(t)
+        t = F.relu(t)
+        t = F.max_pool2d(t, kernel_size=2, stride=2)
 
-    # conv 2
-    t = self.conv2(t)
-    t = F.relu(t)
-    t = F.max_pool2d(t, kernel_size=2, stride=2)
+        # conv 2
+        t = self.conv2(t)
+        t = F.relu(t)
+        t = F.max_pool2d(t, kernel_size=2, stride=2)
 
-    # fc1
-    t = t.reshape(-1, 12*4*4)
-    t = self.fc1(t)
-    t = F.relu(t)
+        # fc1
+        t = t.reshape(-1, 12 * 4 * 4)
+        t = self.fc1(t)
+        t = F.relu(t)
 
-    # fc2
-    t = self.fc2(t)
-    t = F.relu(t)
+        # fc2
+        t = self.fc2(t)
+        t = F.relu(t)
 
-    # output
-    t = self.out(t)
-    return t
+        # output
+        t = self.out(t)
+        return t
+
 
 def get_num_correct(preds, labels):
-  return preds.argmax(dim=1).eq(labels).sum().item()
+    return preds.argmax(dim=1).eq(labels).sum().item()
+
 
 # import modules to build RunBuilder and RunManager helper classes
 from collections import OrderedDict
 from collections import namedtuple
 from itertools import product
 
+
 # Read in the hyper-parameters and return a Run namedtuple containing all the
 # combinations of hyper-parameters
 class RunBuilder():
-  @staticmethod
-  def get_runs(params):
-      Run = namedtuple('Run', params.keys())
+    @staticmethod
+    def get_runs(params):
+        Run = namedtuple('Run', params.keys())
 
-      runs = []
-      for v in product(*params.values()):
-          runs.append(Run(*v))
+        runs = []
+        for v in product(*params.values()):
+            runs.append(Run(*v))
 
-      return runs
+        return runs
 
 
 # Helper class, help track loss, accuracy, epoch time, run time,
 # hyper-parameters etc.
 class RunManager():
     def __init__(self):
-
         # tracking every epoch count, loss, accuracy, time
         self.epoch_count = 0
         self.epoch_loss = 0
@@ -100,7 +102,6 @@ class RunManager():
     # record the count, hyper-param, model, loader of each run
     # record sample images and network graph to TensorBoard
     def begin_run(self, run, network, loader):
-
         self.run_start_time = time.time()
 
         self.run_params = run
@@ -111,8 +112,6 @@ class RunManager():
 
         images, labels = next(iter(self.loader))
         grid = torchvision.utils.make_grid(images)
-
-
 
     # when run ends, close TensorBoard, zero epoch count
     def end_run(self):
@@ -169,7 +168,6 @@ class RunManager():
 
     # save end results of all runs into csv, json for further a
     def save(self, fileName):
-
         pd.DataFrame.from_dict(
             self.run_data,
             orient='columns',
@@ -181,32 +179,33 @@ class RunManager():
 
 # helper function to calculate all predictions of train set
 def get_all_preds(model, loader):
-  all_preds = torch.tensor([])
-  for batch in loader:
-    images, labels = batch
+    all_preds = torch.tensor([])
+    for batch in loader:
+        images, labels = batch
 
-    preds = model(images)
-    all_preds = torch.cat(
-        (all_preds, preds),
-        dim = 0
-    )
-  return all_preds
+        preds = model(images)
+        all_preds = torch.cat(
+            (all_preds, preds),
+            dim=0
+        )
+    return all_preds
+
 
 def inference(data):
     image = Image.fromarray(np.array(data['image'], dtype='uint8'))
-    transform=transforms.Compose([transforms.ToTensor()])
-    img_tensor=transform(image).unsqueeze_(0)
-    network=Network()
+    transform = transforms.Compose([transforms.ToTensor()])
+    img_tensor = transform(image).unsqueeze_(0)
+    network = Network()
     network.load_state_dict(torch.load('trained_model'))
     network.eval()
     with torch.no_grad():
-        r=network.forward(img_tensor).argmax()
-    return {'Predicted':IntTensor.item(r),
-            'Ground_truth':data['label'],
-            'Image Number':data['image number']}
+        r = network.forward(img_tensor).argmax()
+    return {'Predicted': IntTensor.item(r),
+            'Ground_truth': data['label'],
+            'Image Number': data['image number']}
 
-def train(params,train_set,epochs, save_last_model=False, ):
 
+def train(params, train_set, epochs, save_last_model=False, ):
     m = RunManager()
 
     # get all runs from params using RunBuilder class
@@ -256,5 +255,4 @@ if __name__ == '__main__':
         shuffle=[True]
     )
     epochs = 150
-    train(params,train_set,epochs, save_last_model=True)
-
+    train(params, train_set, epochs, save_last_model=True)
