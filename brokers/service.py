@@ -1,11 +1,35 @@
-import os
-from typing import Dict, Callable, Optional, List
+from typing import Dict
+from kafka import KafkaConsumer, KafkaProducer
+from google.cloud import pubsub_v1
 from dotenv import load_dotenv
-from broker import Broker, BrokerProtocol, register_broker
-from kafka import KafkaConsumer, KafkaProducer  # type: ignore
-from json import loads, dumps
-from google.cloud import pubsub_v1  # type: ignore # Google Pub/Sub
-import json
+import os
+from brokers.base import Broker, BrokerProtocol
+from json import dumps, loads
+
+
+class BrokerService:
+
+    def __init__(self, topic: str, callback=None, service: str = 'kafka'):
+        broker_registry=Broker.__subclasses__()
+        filtered_brokers_class = [b for b in broker_registry if b.name == service]
+        if filtered_brokers_class:
+            self.broker = filtered_brokers_class[0](topic=topic, callback=callback)
+        else:
+            print('None')
+            self.broker = None
+
+    def receive(self, wait=False) -> None:
+        if self.broker:
+            self.broker.receive_asynch(wait=wait)
+
+    def send(self, data: Dict) -> None:
+        if self.broker:
+            self.broker.send(data)
+
+    def terminate(self):
+        if self.broker:
+            self.broker.stop_receiving()
+
 
 load_dotenv()
 
@@ -13,7 +37,6 @@ load_dotenv()
 HOST = os.getenv('HOST')
 
 
-@register_broker
 class KafkaBroker(Broker, BrokerProtocol):
     name = 'kafka'
 
@@ -47,18 +70,17 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "credentials.json"
 PUB_SUB_PROJECT = "fashionmnist-335023"
 
 
-@register_broker
 class GooglePubSubBroker(Broker, BrokerProtocol):
     name = 'pub_sub'
 
     def send(self, data: Dict) -> None:
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(PUB_SUB_PROJECT, self.topic)
-        data_json = json.dumps(data).encode("utf-8")
+        data_json = dumps(data).encode("utf-8")
         publisher.publish(topic_path, data=data_json)
 
     def call_back(self, message):
-        self.callback(json.loads(message.data))
+        self.callback(loads(message.data))
         message.ack()
 
     def receive_target(self) -> None:

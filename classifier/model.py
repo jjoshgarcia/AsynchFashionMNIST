@@ -201,8 +201,8 @@ def inference(data):
     with torch.no_grad():
         r = network.forward(img_tensor).argmax()
     return {'Predicted': IntTensor.item(r),
-            'Ground_truth': data['label'],
-            'Image Number': data['image number']}
+            'Ground_truth': data['metadata']['label'] if 'label' in data['metadata'] else '',
+            'Image Number': data['metadata']['number'] if 'metadata' in data and 'number' in data['metadata'] else ''}
 
 
 def train(params, train_set, epochs, save_last_model=False, ):

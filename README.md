@@ -21,6 +21,7 @@
 - Place file in root
 - Create two topics called 'inference' and 'result_inference'
 
+# PART 1
 ## Train the network
 
 - Install requirements
@@ -29,7 +30,7 @@
 ```
 - Run model in terminal for default hyperparameters and Fashion MNIST dataset
 ```
->>> python model.py
+>>> python classifier/model.py
 ```
 - or train your own dataset with custom hyperparameters
 ```
@@ -53,13 +54,13 @@ epochs = 150
 train(params,train_set,epochs, save_last_model=True)
 ```
 
-## Add a broker to the broker service
-Create a subclass of Broker from broker.py with BrokerProtocol and register to the BrokerService by decorating the 
-class with @register_broker
-```
-from broker import Broker, BrokerProtocol, register_broker
+# PART 2
 
-@register_broker
+## Add a broker to the broker service
+Create a subclass of Broker from broker.py with BrokerProtocol. The class will be automatically registered in the service.
+```
+from broker import Broker, BrokerProtocol
+
 class ExampleBroker(Broker, BrokerProtocol):
     name = 'my_broker_name'
 
@@ -87,19 +88,21 @@ service.send(data)
 service.receive()
 ```
 
+# PART 3
 
-## Test Asynchronous Inference
+## Asynchronous Inference
 
-- Run producer to start sending testing images to kafka and pub/sub every 3 seconds
+Create an instance of ClassifierService with result callback and selected broker service. Call classify passing an image and optional metadata.
 ```
->>> python producer.py
+from asynch_classifier.classifier_service import ClassifierService
+
+service = ClassifierService(result_callback, broker=broker)
+service.classify(my_image, metadata={})
 ```
-- Run consumer to listen to inference results in a different terminal window
+
+## Test it!
+
+Run main.py passing the name of the broker service to use as parameter. It should send 3 images and get the results asynchronously.  
 ```
->>> python consumer.py
+>>> python main.py pub_sub
 ```
-- Run the inference service to listen to kafka and pub/sub and make predictions
-```
->>> python inference.py
-```
-Results should start being printed in the consumer console
