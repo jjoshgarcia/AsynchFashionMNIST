@@ -21,7 +21,6 @@
 - Place file in root
 - Create two topics called 'inference' and 'result_inference'
 
-# PART 1
 ## Train the network
 
 - Install requirements
@@ -53,8 +52,6 @@ epochs = 150
 
 train(params,train_set,epochs, save_last_model=True)
 ```
-
-# PART 2
 
 ## Add a broker to the broker service
 Create a subclass of Broker from broker.py with BrokerProtocol. The class will be automatically registered in the service.
