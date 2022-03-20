@@ -85,7 +85,7 @@ service.send(data)
 service.receive()
 ```
 
-# PART 3
+
 
 ## Asynchronous Inference
 
